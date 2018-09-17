@@ -1,0 +1,82 @@
+---
+title: "meachine learning project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document for the meachine learning course project.
+
+## setcion 1 Data Processing
+
+```{r load data}
+library(caret)
+library(rpart)
+library(randomForest)
+library(rattle)
+library(rpart.plot)
+pml_testing <- read.csv("pml-testing.csv",na.strings="NA")
+pml_training <- read.csv("pml-training.csv",na.strings="NA")
+```
+
+The four sensors, arm, blet, forearm, and dumbell provide test data and should be good factors used to predict the class, A, B C,D and E. The following parameters are used as the factors: 
+
+```{r data process}
+
+pml_training2<- pml_training[,grepl(paste(c("_x$","_y$","_z$","classe"),collapse = "|"),colnames(pml_training))]
+set.seed(333) 
+inTrain <- createDataPartition(pml_training2$classe, p = 0.75, list = FALSE)
+data_train <- pml_training2[inTrain, ]
+data_valid <- pml_training2[-inTrain, ]
+```
+
+## 2 Building model, prediction, and accurancy
+
+Here compare three different methods to build the model and prediction 
+
+# 2.1 random forest 
+
+```{r 21}
+fit21<- train(classe~., data = data_train,method="rf")
+predict21<- predict(fit21, data_valid)
+conf21<- confusionMatrix(data_valid$classe, predict21)
+accuracy21 <- conf21$overall[1]
+accuracy21 
+```
+The accurancy is 0.987.
+
+
+#2.2 gbm method
+```{r 22}
+fit22<- train(classe~., data = data_train,method="gbm")
+predict22 <- predict(fit22, data_valid)
+conf22 <- confusionMatrix(data_valid$classe, predict22)
+accuracy22 <- conf22$overall[1]
+accuracy22 
+```
+The accurancy is 0.90 .
+
+
+#2.3 raprt (Recursive Partitioning And Regression Trees) method
+
+```{r 23}
+fit23 <- train(classe ~ ., data = data_train, method = "rpart")
+p23<-fancyRpartPlot(fit23$finalModel)
+predict23 <- predict(fit23, data_valid)
+conf23 <- confusionMatrix(data_valid$classe, predict23)
+accuracy23 <- conf23$overall[1]
+accuracy23 
+```
+ 
+The accurancy is 0.37. The random forest gives the highest accurancy, 0.99.
+
+## 3 model prediction given the test data
+Use the method with the highest accurancy to do the prediction:
+```{r 3}
+fit<-fit21
+predict(fit, pml_testing)
+```
